@@ -1,11 +1,10 @@
 from mode import *
 import argparse
 
-
-parser = argparse.ArgumentParser()
-
 def str2bool(v):
     return v.lower() in ('true')
+
+parser = argparse.ArgumentParser()
 
 parser.add_argument("--LR_path", type = str, default = '../dataSet/DIV2K/DIV2K_train_LR_bicubic/X4')
 parser.add_argument("--GT_path", type = str, default = '../dataSet/DIV2K/DIV2K_train_HR/')
@@ -28,12 +27,14 @@ parser.add_argument("--mode", type = str, default = 'train')
 
 args = parser.parse_args()
 
-if args.mode == 'train':
-    train(args)
-    
-elif args.mode == 'test':
-    test(args)
-    
-elif args.mode == 'test_only':
-    test_only(args)
+if __name__=='__main__':
+
+	if args.mode == 'train':
+	    train(args)
+	    
+	elif args.mode == 'test':
+	    test(args)
+	    
+	elif args.mode == 'test_only':
+	    test_only(args)
 

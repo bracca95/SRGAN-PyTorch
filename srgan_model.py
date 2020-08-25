@@ -1,3 +1,4 @@
+import math
 import torch
 import torch.nn as nn
 from ops import *
@@ -15,11 +16,13 @@ class Generator(nn.Module):
         
         self.conv02 = conv(in_channel = n_feats, out_channel = n_feats, kernel_size = 3, BN = True, act = None)
         
-        if(scale == 4):
-            upsample_blocks = [Upsampler(channel = n_feats, kernel_size = 3, scale = 2, act = act) for _ in range(2)]
-        else:
-            upsample_blocks = [Upsampler(channel = n_feats, kernel_size = 3, scale = scale, act = act)]
-
+        try:
+            n_blocks = scale_factor(scale)
+        except ValueError: 
+            'Scale factor must be a power of 2 (default = 8)'
+        
+        upsample_blocks = [Upsampler(channel=n_feats, kernel_size=3, scale=2, act=act) for _ in range(n_blocks)]
+        
         self.tail = nn.Sequential(*upsample_blocks)
         
         self.last_conv = conv(in_channel = n_feats, out_channel = img_feat, kernel_size = 3, BN = False, act = nn.Tanh())
@@ -72,3 +75,17 @@ class Discriminator(nn.Module):
         
         return x
 
+
+def scale_factor(scale):
+    """ scale_factor
+    
+    it checks that the inserted number is a power of 2 and that it is not
+    negative (tranformed to 1 in case)
+    """
+    
+    if scale < 1: scale = 1
+
+    if not math.log2(scale).is_integer():
+        raise ValueError
+    else:
+        return int(math.log2(scale))

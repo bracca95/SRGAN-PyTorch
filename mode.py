@@ -18,10 +18,20 @@ def train(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     transform  = transforms.Compose([crop(args.scale, args.patch_size), augmentation()])
-    dataset = mydata(GT_path = args.GT_path, LR_path = args.LR_path, in_memory = args.in_memory, transform = transform)
-    loader = DataLoader(dataset, batch_size = args.batch_size, shuffle = True, num_workers = args.num_workers)
+    #transform  = transforms.Compose([augmentation()])
+    dataset = mydata(GT_path=args.GT_path, LR_path=args.LR_path, in_memory=args.in_memory, transform=transform)
     
-    generator = Generator(img_feat = 3, n_feats = 64, kernel_size = 3, num_block = args.res_num, scale=args.scale)
+    loader = DataLoader(dataset,
+                        batch_size=args.batch_size,
+                        shuffle=True, 
+                        num_workers=args.num_workers)
+    
+    ### LOAD MODEL IN MEMORY
+    generator = Generator(img_feat=3, 
+                        n_feats=64, 
+                        kernel_size=3, 
+                        num_block=args.res_num, 
+                        scale=args.scale)
     
     
     if args.fine_tuning:        
@@ -32,33 +42,33 @@ def train(args):
     generator = generator.to(device)
     generator.train()
     
-    l2_loss = nn.MSELoss()
     g_optim = optim.Adam(generator.parameters(), lr = 1e-4)
         
-    pre_epoch = 0
-    fine_epoch = 0
     
     #### Train using L2_loss
+    l2_loss = nn.MSELoss()
+    
+    pre_epoch = 0
     while pre_epoch < args.pre_train_epoch:
         for i, tr_data in enumerate(loader):
             gt = tr_data['GT'].to(device)
             lr = tr_data['LR'].to(device)
 
+            g_optim.zero_grad()
             output, _ = generator(lr)
             loss = l2_loss(gt, output)
 
-            g_optim.zero_grad()
             loss.backward()
             g_optim.step()
 
         pre_epoch += 1
 
-        if pre_epoch % 2 == 0:
+        if pre_epoch % 100 == 0:
             print(pre_epoch)
             print(loss.item())
             print('=========')
         
-        if pre_epoch % 800 ==0:
+        if pre_epoch % 100 ==0:
             torch.save(generator.state_dict(), './model/pre_trained_model_%03d.pt'%pre_epoch)
 
         
@@ -66,7 +76,7 @@ def train(args):
     vgg_net = vgg19().to(device)
     vgg_net = vgg_net.eval()
     
-    discriminator = Discriminator(patch_size = args.patch_size * args.scale)
+    discriminator = Discriminator(patch_size=args.patch_size * args.scale)
     discriminator = discriminator.to(device)
     discriminator.train()
     
@@ -79,10 +89,11 @@ def train(args):
     real_label = torch.ones((args.batch_size, 1)).to(device)
     fake_label = torch.zeros((args.batch_size, 1)).to(device)
     
+    fine_epoch = 0
     while fine_epoch < args.fine_train_epoch:
         
         scheduler.step()
-        
+
         for i, tr_data in enumerate(loader):
             gt = tr_data['GT'].to(device)
             lr = tr_data['LR'].to(device)
@@ -123,13 +134,13 @@ def train(args):
             
         fine_epoch += 1
 
-        if fine_epoch % 2 == 0:
+        if fine_epoch % 100 == 0:
             print(fine_epoch)
             print(g_loss.item())
             print(d_loss.item())
             print('=========')
 
-        if fine_epoch % 500 ==0:
+        if fine_epoch % 100 ==0:
             torch.save(generator.state_dict(), './model/SRGAN_gene_%03d.pt'%fine_epoch)
             torch.save(discriminator.state_dict(), './model/SRGAN_discrim_%03d.pt'%fine_epoch)
 
@@ -139,7 +150,7 @@ def train(args):
 def test(args):
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dataset = mydata(GT_path = args.GT_path, LR_path = args.LR_path, in_memory = False, transform = None)
+    dataset = mydata(GT_path=args.GT_path, LR_path=args.LR_path, in_memory=False, transform=None)
     loader = DataLoader(dataset, batch_size = 1, shuffle = False, num_workers = args.num_workers)
     
     generator = Generator(img_feat = 3, n_feats = 64, kernel_size = 3, num_block = args.res_num)
@@ -186,7 +197,7 @@ def test(args):
 def test_only(args):
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dataset = testOnly_data(LR_path = args.LR_path, in_memory = False, transform = None)
+    dataset = testOnly_data(LR_path = args.LR_path, in_memory=False, transform = None)
     loader = DataLoader(dataset, batch_size = 1, shuffle = False, num_workers = args.num_workers)
     
     generator = Generator(img_feat = 3, n_feats = 64, kernel_size = 3, num_block = args.res_num)
