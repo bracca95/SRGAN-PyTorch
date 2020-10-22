@@ -11,6 +11,7 @@ import numpy as np
 from PIL import Image
 from skimage.color import rgb2ycbcr
 from skimage.measure import compare_psnr
+from tqdm import tqdm
 
 
 def train(args):
@@ -24,7 +25,8 @@ def train(args):
     loader = DataLoader(dataset,
                         batch_size=args.batch_size,
                         shuffle=True, 
-                        num_workers=args.num_workers)
+                        num_workers=args.num_workers,
+                        drop_last=True)
     
     ### LOAD MODEL IN MEMORY
     generator = Generator(img_feat=3, 
@@ -85,7 +87,7 @@ def train(args):
     
     VGG_loss = perceptual_loss(vgg_net)
     cross_ent = nn.BCELoss()
-    tv_loss = TVLoss()
+    tv_loss = TVLoss() # The total variation (TV) loss encourages spatial smoothness in the SR img
     real_label = torch.ones((args.batch_size, 1)).to(device)
     fake_label = torch.zeros((args.batch_size, 1)).to(device)
     
@@ -94,7 +96,7 @@ def train(args):
         
         scheduler.step()
 
-        for i, tr_data in enumerate(loader):
+        for i, tr_data in enumerate(tqdm(loader)):
             gt = tr_data['GT'].to(device)
             lr = tr_data['LR'].to(device)
                         
@@ -134,13 +136,13 @@ def train(args):
             
         fine_epoch += 1
 
-        if fine_epoch % 100 == 0:
+        if fine_epoch % int(args.save_after/args.save_after) == 0:
             print(fine_epoch)
             print(g_loss.item())
             print(d_loss.item())
             print('=========')
 
-        if fine_epoch % 100 ==0:
+        if fine_epoch % args.save_after == 0:
             torch.save(generator.state_dict(), './model/SRGAN_gene_%03d.pt'%fine_epoch)
             torch.save(discriminator.state_dict(), './model/SRGAN_discrim_%03d.pt'%fine_epoch)
 

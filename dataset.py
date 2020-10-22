@@ -7,6 +7,8 @@ from torch.utils.data import Dataset
 from PIL import Image
 from utilities import resize
 
+acc_ext = ('.jpg', '.jpeg', '.png')
+
 class mydata(Dataset):
     def __init__(self, LR_path, GT_path, in_memory=True, transform=None):
         
@@ -15,8 +17,8 @@ class mydata(Dataset):
         self.transform = transform
         self.in_memory = in_memory
         
-        self.LR_img = sorted(os.listdir(LR_path))
-        self.GT_img = sorted(os.listdir(GT_path))
+        self.LR_img = sorted([name for name in os.listdir(LR_path) if name.endswith(acc_ext)])
+        self.GT_img = sorted([name for name in os.listdir(GT_path) if name.endswith(acc_ext)])
 
         # scale GT to 64x64 if larger
         test_dim = Image.open(os.path.join(self.GT_path, self.GT_img[0])).convert("RGB")

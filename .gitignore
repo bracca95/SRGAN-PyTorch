@@ -1,2 +1,4 @@
 .DS_Store
 utilities/load_data.sh
+utilities/load_celeba.sh
+result/THESIS

@@ -24,6 +24,7 @@ parser.add_argument("--fine_tuning", type = str2bool, default = False)
 parser.add_argument("--in_memory", type = str2bool, default = True)
 parser.add_argument("--generator_path", type = str)
 parser.add_argument("--mode", type = str, default = 'train')
+parser.add_argument("--save_after", type=int)
 
 args = parser.parse_args()
 
