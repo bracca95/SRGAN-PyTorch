@@ -131,9 +131,6 @@ class crop(object):
         ty = iy * self.scale
 
         # match the correct pixels patch from LR to HR
-        # potrei croppare l'intera immagine così non scassa il cazzo       
-        # LR_patch = LR_img[iy : iy + self.patch_size, ix : ix + self.patch_size]
-        # GT_patch = GT_img[ty : ty + (self.scale * self.patch_size), tx : tx + (self.scale * self.patch_size)]
         LR_patch = LR_img[0 : self.patch_size, 0 : self.patch_size]
         GT_patch = GT_img[0 : (self.scale * self.patch_size), 0 : (self.scale * self.patch_size)]
 
